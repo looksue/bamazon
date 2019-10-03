@@ -33,7 +33,7 @@ connection.query("SELECT * FROM products", function (err, results) {
         var price = gResults[i].price;
     }
 
-    // start the user input part of the program
+    // clear the terminal and start the user input part of the program
     console.log('\033[2J');
     start();
 });
@@ -65,7 +65,7 @@ function start() {
                 //run function to prompt for number of units
                 unitAmount();
             } else {
-                //start over
+                //clear the terminal and start over
                 console.log('\033[2J');
                 console.log("Item ID is invalid.");
                 start();
@@ -116,7 +116,7 @@ function displayInvoice() {
     connection.query("SELECT price FROM products WHERE item_id = " + gAnswer_item.product_to_purchase, function (err, results) {
         if (err) throw err;
         var totalCost = (parseInt(gAnswer_units.units_to_purchase) * results[0].price);
-        //display the total cost to the user
+        //clear the terminal and display the total cost to the user
         console.log('\033[2J');
         console.log("Thank you for your purchase. Your total cost is: $" + totalCost);
         start();
