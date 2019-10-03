@@ -26,7 +26,7 @@ connection.query("SELECT * FROM products", function (err, results) {
     // make a global pointer to the results for other functions
     gResults = results;
 
-    //display all items for sale
+    //capture all items for sale
     for (i = 0; i < gResults.length; i++) {
         var item = gResults[i].item_id;
         var name = gResults[i].product_name;
@@ -34,6 +34,7 @@ connection.query("SELECT * FROM products", function (err, results) {
     }
 
     // start the user input part of the program
+    console.log('\033[2J');
     start();
 });
 
@@ -65,6 +66,7 @@ function start() {
                 unitAmount();
             } else {
                 //start over
+                console.log('\033[2J');
                 console.log("Item ID is invalid.");
                 start();
             }
@@ -90,6 +92,7 @@ function checkInventory() {
         if (err) throw err;
         //if we don't have enough in stock-log that to the user
         if (parseInt(gAnswer_units.units_to_purchase) > results[0].stock_quantity) {
+            console.log('\033[2J');
             console.log("Sorry, insufficent quantity!!");
             start();
         } else {
@@ -114,6 +117,7 @@ function displayInvoice() {
         if (err) throw err;
         var totalCost = (parseInt(gAnswer_units.units_to_purchase) * results[0].price);
         //display the total cost to the user
+        console.log('\033[2J');
         console.log("Thank you for your purchase. Your total cost is: $" + totalCost);
         start();
     });
