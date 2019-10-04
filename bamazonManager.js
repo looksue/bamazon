@@ -5,6 +5,10 @@ var gResults;
 var gAnswer_menu;
 var gAnswer_units;
 var newStock;
+var gName;
+var gDept;
+var gPrice;
+var gQty;
 
 //create the connection to the sql database
 var connection = mysql.createConnection({
@@ -40,8 +44,6 @@ connection.query("SELECT * FROM products", function (err, results) {
 
 //function that prompts the user for action
 function start() {
-    // display all items for sale
-    //console.table(gResults, ["item_id", "product_name", "price"]);
 
     //prompt user to view products for sale
     inquirer
@@ -51,12 +53,13 @@ function start() {
             message: "What would you like to view?",
             choices: ["View Products for Sale", "View Low Inventory", "Add to Inventory", "Add New Product"]
         })
+        //based on user input-determine which function to run
         .then(function (answer_menu) {
             gAnswer_menu = answer_menu;
             if (gAnswer_menu.menu_option === "View Products for Sale") {
                 viewProducts();
             } else if (gAnswer_menu.menu_option === "View Low Inventory") {
-                viewInventory();
+                viewLowInventory();
             } else if (gAnswer_menu.menu_option === "Add to Inventory") {
                 addInventory();
             } else if (gAnswer_menu.menu_option === "Add New Product") {
@@ -65,53 +68,163 @@ function start() {
         })
 };
 
-function unitAmount() {
+function viewProducts() {
+    //query the database for the products for sale
+    connection.query("SELECT * FROM products", function (err, results) {
+        if (err) throw err;
+
+        // make a global pointer to the results for other functions
+        gResults = results;
+
+        //capture all items for sale
+        for (i = 0; i < gResults.length; i++) {
+            var item = gResults[i].item_id;
+            var name = gResults[i].product_name;
+            var price = gResults[i].price;
+        }
+
+        // display all items for sale
+        console.table(gResults, ["item_id", "product_name", "price", "stock_quantity"]);
+        start();
+    });
+};
+
+function viewLowInventory() {
+    //query the database for the products for sale
+    connection.query("SELECT * FROM products WHERE stock_quantity < 5", function (err, results) {
+        if (err) throw err;
+
+        // make a global pointer to the results for other functions
+        gResults = results;
+
+        //capture all items for sale
+        for (i = 0; i < gResults.length; i++) {
+            var item = gResults[i].item_id;
+            var name = gResults[i].product_name;
+            var price = gResults[i].price;
+        }
+
+        // display all items for sale
+        console.log("\033[2J");
+        console.table(gResults, ["item_id", "product_name", "price", "stock_quantity"]);
+        start();
+    });
+};
+
+function addInventory() {
+    //prompt the user to add inventory to a product
     inquirer
         .prompt({
-            name: "units_to_purchase",
+            name: "product_to_increase",
             type: "input",
-            message: "How many units would you like to buy?"
+            message: "What is the ID of the product you would like to add inventory to?"
         })
-        .then(function (answer_units) {
-            gAnswer_units = answer_units;
-            checkInventory();
+        .then(function (answer_item) {
+            gAnswer_item = answer_item;
+            //validate user input with a flag - assume the item_id is invalid
+            var item_isvalid = false;
+
+            //if the item_id matches one of the results-the item_id is valid 
+            for (i = 0; i < gResults.length; i++) {
+                if (answer_item.product_to_increase == gResults[i].item_id) {
+                    item_isvalid = true;
+                };
+            }
+            if (item_isvalid) {
+                //run function to prompt for number of units
+                unitAmount();
+            } else {
+                //clear the terminal and start over
+                console.log("\033[2J");
+                console.log("Item ID is invalid.");
+                viewProducts();
+            }
         })
 };
 
-function checkInventory() {
+function unitAmount() {
+    inquirer
+        .prompt({
+            name: "units_to_increase",
+            type: "input",
+            message: "How many units would you like to increase?"
+        })
+        .then(function (answer_units) {
+            gAnswer_units = answer_units;
+            increaseInventory();
+        })
+};
+
+function increaseInventory() {
     //query the database for the stock_quantity of item_id
-    connection.query("SELECT stock_quantity FROM products WHERE item_id = " + gAnswer_menu.product_to_purchase, function (err, results) {
+    connection.query("SELECT stock_quantity FROM products WHERE item_id = " + gAnswer_item.product_to_increase, function (err, results) {
         if (err) throw err;
-        //if we don"t have enough in stock-log that to the user
-        if (parseInt(gAnswer_units.units_to_purchase) > results[0].stock_quantity) {
-            console.log("\033[2J");
-            console.log("Sorry, insufficent quantity!!");
-            start();
-        } else {
-            //if we have enough in stock-subtract the units ordered from stock_quantity 
-            newStock = (results[0].stock_quantity - parseInt(gAnswer_units.units_to_purchase));
-            updateInventory();
-        }
+
+        //do the math
+        newStock = (results[0].stock_quantity + parseInt(gAnswer_units.units_to_increase));
+        updateInventory();
     });
 };
 
 function updateInventory() {
-    //subtract the units ordered from stock_quantity 
-    connection.query("UPDATE products SET stock_quantity = " + newStock + " WHERE item_id = " + gAnswer_menu.product_to_purchase, function (err, results) {
+    //add the units to stock_quantity 
+    connection.query("UPDATE products SET stock_quantity = " + newStock + " WHERE item_id = " + gAnswer_item.product_to_increase, function (err, results) {
         if (err) throw err;
-        displayInvoice();
+        console.log("\033[2J");
+        viewProducts();
     });
 };
 
-function displayInvoice() {
-    //query the database for the price of item_id
-    connection.query("SELECT price FROM products WHERE item_id = " + gAnswer_menu.product_to_purchase, function (err, results) {
-        if (err) throw err;
-        var totalCost = (parseInt(gAnswer_units.units_to_purchase) * results[0].price);
-        //clear the terminal and display the total cost to the user
-        console.log("\033[2J");
-        console.log("Thank you for your purchase. Your total cost is: $" + totalCost);
-        start();
-    });
-}
+function addProduct() {
+    // mySQL should manage the item_id because it's AUTO_INCREMENT
+    // ask the user for the product name (pName)
+    inquirer
+        .prompt({
+            name: "pName",
+            type: "input",
+            message: "What is the name of the product to add?"
+        })
+        .then(function (answer_pName) {
+            gName = answer_pName;
+            // ask the user for the product department (pDept)
+            inquirer
+                .prompt({
+                    name: "pDept",
+                    type: "input",
+                    message: "What department does it belong to?"
+                })
+                .then(function (answer_pDept) {
+                    gDept = answer_pDept;
+                    // ask the user for the product price (pPrice)
+                    inquirer
+                        .prompt({
+                            name: "pPrice",
+                            type: "input",
+                            message: "What is the price of the new product?"
+                        })
+                        .then(function (answer_pPrice) {
+                            gPrice = answer_pPrice;
+                            // ask the user for the product stock_quantity (pQty)
+                            inquirer
+                                .prompt({
+                                    name: "pQty",
+                                    type: "input",
+                                    message: "How many units would you like to stock?"
+                                })
+                                .then(function (answer_pQty) {
+                                    gQty = answer_pQty;
+                                    // update the database with an INSERT command
+                                    connection.query("INSERT INTO products (product_name, department_name, price, stock_quantity) VALUES ('" + gName.pName + "', '" + gDept.pDept + "', " + gPrice.pPrice + "," + gQty.pQty + ")", function (err, results) {
+                                        if (err) throw err;
+                                        viewProducts();
+                                    });
+                                });
+
+                        });
+
+                });
+
+        });
+};
+
 return;

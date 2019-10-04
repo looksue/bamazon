@@ -6,5 +6,4 @@ CREATE TABLE departments (
     over_head_costs DECIMAL(13,4) NULL,
     PRIMARY KEY (department_id)
     );
-    
 
