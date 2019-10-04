@@ -34,7 +34,7 @@ connection.query("SELECT * FROM products", function (err, results) {
     }
 
     // clear the terminal and start the user input part of the program
-    console.log('\033[2J');
+    console.log("\033[2J");
     start();
 });
 
@@ -49,10 +49,19 @@ function start() {
             name: "menu_option",
             type: "list",
             message: "What would you like to view?",
-            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product']
+            choices: ["View Products for Sale", "View Low Inventory", "Add to Inventory", "Add New Product"]
         })
         .then(function (answer_menu) {
             gAnswer_menu = answer_menu;
+            if (gAnswer_menu.menu_option === "View Products for Sale") {
+                viewProducts();
+            } else if (gAnswer_menu.menu_option === "View Low Inventory") {
+                viewInventory();
+            } else if (gAnswer_menu.menu_option === "Add to Inventory") {
+                addInventory();
+            } else if (gAnswer_menu.menu_option === "Add New Product") {
+                addProduct();
+            }
         })
 };
 
@@ -73,9 +82,9 @@ function checkInventory() {
     //query the database for the stock_quantity of item_id
     connection.query("SELECT stock_quantity FROM products WHERE item_id = " + gAnswer_menu.product_to_purchase, function (err, results) {
         if (err) throw err;
-        //if we don't have enough in stock-log that to the user
+        //if we don"t have enough in stock-log that to the user
         if (parseInt(gAnswer_units.units_to_purchase) > results[0].stock_quantity) {
-            console.log('\033[2J');
+            console.log("\033[2J");
             console.log("Sorry, insufficent quantity!!");
             start();
         } else {
@@ -100,7 +109,7 @@ function displayInvoice() {
         if (err) throw err;
         var totalCost = (parseInt(gAnswer_units.units_to_purchase) * results[0].price);
         //clear the terminal and display the total cost to the user
-        console.log('\033[2J');
+        console.log("\033[2J");
         console.log("Thank you for your purchase. Your total cost is: $" + totalCost);
         start();
     });
