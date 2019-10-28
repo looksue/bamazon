@@ -1,6 +1,10 @@
 # bamazon
 **How to run this app:** 
 This app runs in the terminal window. 
+1. Open your terminal.
+2. Type in "node bamazonCustomer.js" (case sensitive) or "node bamazonManager.js". 
+3. Review the list of items for sale or review the product inventory. 
+4. Follow the prompt questions. 
 
 **Usage:** >node bamazonCustomer.js | node bamazonManager.js 
 
